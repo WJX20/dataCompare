@@ -1,5 +1,5 @@
 <div>
-  <h1 style="font-size: 70px;text-align: center">pgCompare</h1>
+  <h1 style="font-size: 70px;text-align: center">data compare pg</h1>
   <h2 style="text-align: center">Data Compare</h2>
 </div>
 <hr>

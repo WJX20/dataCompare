@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+    url: jdbc:postgresql://127.0.0.1:5432/pgcompare?currentSchema=pgcompare
+
+
+#
+#  profiles:
+#    active: dev
+#  main:
+#    allow-bean-definition-overriding: false
+
+#配置mybatis-plus
+mybatis-plus:
+  #告诉mybatis框架映射文件的位置
+  mapper-locations: classpath:mapper/*.xml
+  #设置类型别名，在映射文件中可以直接写首字母小写的实体类名称即可
+#  type-aliases-package: com.crunchydata.models
+  #驼峰映射：例如数据库中的字段名emp_name能对应实体类中的属性名empName
+  configuration:
+    map-underscore-to-camel-case: true
+
+datasource:
+  aes:
+    key: AD42F6697B035B75
+

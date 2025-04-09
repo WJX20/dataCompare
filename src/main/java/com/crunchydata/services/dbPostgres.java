@@ -112,12 +112,12 @@ public class dbPostgres {
      */
     public static Connection getConnection(Properties connectionProperties, String destType, String module) {
         Connection conn = null;
-        String url = "jdbc:postgresql://"+connectionProperties.getProperty(destType+"-host")+":"+connectionProperties.getProperty(destType+"-port")+"/"+connectionProperties.getProperty(destType+"-dbname")+"?sslmode="+connectionProperties.getProperty(destType+"-sslmode");
+        String url = "jdbc:postgresql://"+connectionProperties.getProperty(destType+"-host")+":"+connectionProperties.getProperty(destType+"-port")+"/"+connectionProperties.getProperty(destType+"-dbname")+"?sslmode="+connectionProperties.getProperty(destType+"-sslmode")+"&currentSchema="+connectionProperties.getProperty(destType+"-schema");
         Properties dbProps = new Properties();
 
         dbProps.setProperty("user",connectionProperties.getProperty(destType+"-user"));
         dbProps.setProperty("password",connectionProperties.getProperty(destType+"-password"));
-        dbProps.setProperty("options","-c search_path="+connectionProperties.getProperty(destType+"-schema")+",public,pg_catalog");
+//        dbProps.setProperty("options","-c search_path="+connectionProperties.getProperty(destType+"-schema")+",public,pg_catalog");
         dbProps.setProperty("reWriteBatchedInserts", "true");
         dbProps.setProperty("preparedStatementCacheQueries", "5");
         dbProps.setProperty("ApplicationName", "pgCompare - " + module);

@@ -243,7 +243,6 @@ public class pgCompare {
         } catch (Exception e) {
             Logging.write("severe", THREAD_NAME, String.format("Error performing data reconciliation: %s",e.getMessage()));
         }
-
         createSummary(tablesProcessed, runResult, startStopWatch);
 
     }

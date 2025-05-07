@@ -1,6 +1,7 @@
 <div>
-  <h1 style="font-size: 70px;text-align: center">data compare pg</h1>
+  <h1 style="font-size: 70px;text-align: center">data compare</h1>
   <h2 style="text-align: center">Data Compare</h2>
+  <h2 style="text-align: center">存储库基于postgresql</h2>
 </div>
 <hr>
 

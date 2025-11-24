@@ -18,9 +18,8 @@
 
 - **Active-Active replication configuration:**  Regularly verify data consistency to mitigate risks.
 
-pgCompare uses hashing to compare table data efficiently. Hash values for primary keys and remaining columns are stored in a repository, reducing storage and network demands. Comparisons are processed in parallel, improving performance.
+DataCompare uses hashing to compare table data efficiently. Hash values for primary keys and remaining columns are stored in a repository, reducing storage and network demands. Comparisons are processed in parallel, improving performance.
 
-This open-source project is maintained by **Crunchy Data** under the **Apache 2.0 License** and is made available for broader use, testing, and feedback.
 
 # Features
 
@@ -57,103 +56,9 @@ Before initiating the build and installation process, ensure the following prere
 
 ```shell
 git clone --depth 1 git@github.com:<your-github-username>/pgCompare.git
-cd pgCompare
+cd DataCompare
 mvn clean install
 ```
-
-## 3. Configure Properties
-
-Copy `pgcompare.properties.sample` to `pgcompare.properties` and update the connection parameters for your repository, source, and target databases.
-By default, the application looks for the properties file in the execution directory. Use `PGCOMPARE_CONFIG` environment variable to specify a custom properties file location.
-
-At a minimal the `repo-xxxxx` parameters are required in the properties file (or specified by environment parameters).  Besides the properties file and environment variables, another alternative is to store the property settings in the `dc_project` table.  Settings can be stored in the `project_config` column in JSON format ({"parameter": "value"}).  Certain system parameters like log-destination can only be specified via the properties file or environment variables.
-
-## 4. Initialize Repository
-
-Run the script or use the command below to set up the PostgreSQL repository:
-
-```shell
-java -jar pgcompare.jar --init
-```
-
-## 5. Discover Tables
-
-Discover and map tables in specified schemas:
-
-```shell
-java -jar pgcompare.jar --discovery
-```
-
-# Usage
-
-## Define Table Mapping
-
-1. Automatic Discovery
-
-    Discover and map tables in specified schemas:
-
-    ```shell
-    java -jar pgcompare.jar --discovery
-    ```
-
-2. Manual Registration 
-
-    Insert mappings into `dc_table` and `dc_table_map` tables in the repository.
-
-## Run Data Comparison
-
-```shell
-java -jar pgcompare.jar --batch 0
-```
-
-Batch 0 processes all data. Use `PGCOMPARE-BATCH` or specify the batch number using the `--batch` argument to specify a batch number.
-
-## Recheck Discrepancies
-
-Revalidate flagged rows:
-
-```shell
-java -jar pgcompare.jar --batch 0 --check
-```
-
-# Upgrading
-
-## Version 0.3.0 Enhancements
-
-- DB2 support.
-- Case-sensitive table/column name handling.
-- New project configurations for easier management.
-
-**Note:** Drop and recreate the repository to upgrade to 0.3.0.
-
-# Advanced Configuration
-
-## Properties
-
-Define properties via a file, environment variables, or the `dc_project` table. Environment variables override file settings and must be prefixed with `PGCOMPARE_`.
-
-Examples:
-- File: `batch-fetch-size=2000`
-- Env: `PGCOMPARE_BATCH_FETCH_SIZE=2000`
-
-## Tuning Performance
-
-- **Batch size:** Adjust `batch-fetch-size` and `batch-commit-size` for memory efficiency.
-- **Threads:** Use loader-threads (default: 4) for parallel processing.
-- **Observer throttle:** Enable to prevent overloading temporary tables (observer-throttle=true).
-- **Java Heap Size:** For larger datasets, there may be a need to increase the Java Heap size.  Use the options `-Xms` and `-Xmx` when executing pgCompare (`java -Xms512m -Xmx2g -jar pgcompare.jar`). 
-
-## Repository Recommendations
-
-- Minimal requirements: 2 vCPUs, 8 GB RAM.
-- PostgreSQL settings:
-  - shared_buffers=2048MB
-  - work_mem=256MB
-  - max_parallel_workers=16
-
-## Projects
-
-Projects allow for the repository to maintain different mappings for different compare objectives.  This allows a central pgCompare repository to be used for multiple compare projects.  Each table has a `pid` column which is the project id.  If no project is specified, the default project (pid = 1) is used.
 
 # Viewing Results
 
@@ -183,21 +88,6 @@ FROM dc_source s
 ```
 
 # Reference
-
-## Column Map
-
-The system will automatically generate a column mapping during the first execution on a table.  This column mapping will be stored in the `dc_table_column` and `dc_table_column_map` repository tables. This mapping can be performed ahead of time or the generated mapping modified as needed.  If a column mapping is present, the program will not perform a remap unless instructed to using the `maponly` flag.
-
-To create or overwrite current column mappings stored in column_map colum of dc_table, execute the following:
-
-```shell
-java -jar pgcompare.jar --batch 0 --maponly
-```
-
-## Properties
-
-Properties are categorized into four sections: system, repository, source, and target. Each section has specific properties, as described in detail in the documentation.  The properties can be specified via a configuration file, environment variables or a combination of both.  To use environment variables, the environment variable will be the name of the property in upper case with dashes '-' converted to underscore '_' and prefixed with PGCOMPARE_.  For example, batch-fetch-size can be set by using the environment variable PGCOMPARE_BATCH_FETCH_SIZE.
-
 ### System
 - batch-fetch-size: Sets the fetch size for retrieving rows from the source or target database.
 - batch-commit-size:  The commit size controls the array size and number of rows concurrently inserted into the dc_source/dc_target staging tables.
@@ -245,18 +135,9 @@ Properties are categorized into four sections: system, repository, source, and t
 - target-type:  Database type: oracle, postgres
 - target-user:  Database username.
 
-## Property Precedence
-
-The system contains default values for every parameter.  These can be over-ridden using environment variables, properties file, or values saved in the `dc_project` table.  The following is the order of precedence used:
-
-- Default values
-- Properties file
-- Environment variables
-- Settings stored in `dc_project` table
-
 # License
 
-**pgCompare** is licensed under the [Apache 2.0 license](LICENSE.md).
+**dataCompare** is licensed under the [Apache 2.0 license](LICENSE.md).
 
 
 

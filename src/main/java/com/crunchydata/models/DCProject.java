@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DCProject {
     @TableId(value = "pid",type = IdType.AUTO)
-    private int pid;
+    private Integer pid;
     private String projectName;
     private String projectConfig;
 }

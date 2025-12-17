@@ -15,7 +15,7 @@ public class CommonData {
 
     //    @ApiModelProperty("Id")
     @TableId
-    private int id;
+    private Integer id;
 
     //    @ApiModelProperty("分类")
     private String category;

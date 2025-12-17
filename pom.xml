@@ -205,13 +205,13 @@
                                 <resource>
                                     <directory>.</directory>
                                     <includes>
-                                        <include>pgcompare.properties.sample</include>
+                                        <include>dataCompare.properties.sample</include>
                                     </includes>
                                 </resource>
                                 <resource>
                                     <directory>src/main/resources</directory>
                                     <includes>
-                                        <include>pgcompare*</include>
+                                        <include>dataCompare*</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -248,7 +248,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.crunchydata.pgCompare</mainClass>
+                            <mainClass>com.crunchydata.dataCompare</mainClass>
                         </manifest>
                         <manifestEntries>
                             <Class-Path>.</Class-Path>
@@ -257,6 +257,6 @@
                 </configuration>
             </plugin>
         </plugins>
-        <finalName>pgcompare</finalName>
+        <finalName>dataCompare</finalName>
     </build>
 </project>

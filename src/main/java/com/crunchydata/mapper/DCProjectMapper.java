@@ -2,10 +2,7 @@ package com.crunchydata.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.crunchydata.models.DCProject;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface DCProjectMapper extends BaseMapper<DCProject> {
@@ -19,4 +16,7 @@ public interface DCProjectMapper extends BaseMapper<DCProject> {
     // 查询是否存在该项目名称
     @Select("select count(*) from dc_project where project_name = #{projectName}")
     Integer countByProjectName(@Param("projectName") String projectName);
+
+    @Delete("delete from dc_project where pid = #{pid}")
+    int deleteByPid(@Param("pid") int pid);
 }

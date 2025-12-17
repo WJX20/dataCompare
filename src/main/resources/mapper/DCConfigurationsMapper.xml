@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.crunchydata.mapper.DCConfigurationsMapper">
+
+    <select id="listConfigsByPage" resultType="com.crunchydata.models.DCConfigurations">
+        select
+        dcc.*
+        from dc_configurations dcc
+        <where>
+            <if test="configKey != null and configKey != ''">
+                dcc.config_key like concat('%', #{configKey}, '%')
+            </if>
+        </where>
+        order by dcc.config_id
+    </select>
+</mapper>

@@ -95,6 +95,11 @@ public class ReconcileController {
         result.put("notEqual", 0);
         result.put("equal", 0);
 
+        Integer cid = null;
+        if (!check) {
+            cid = rpc.dcrCreate(connRepo, dctmTarget.getTid(), dctmTarget.getTableAlias(), rid);
+        }
+
         try {
             // Get Column Info and Mapping
             binds.add(0, dct.getTid());
@@ -113,12 +118,22 @@ public class ReconcileController {
             ColumnMetadata ciSource = getColumnInfo(columnMap, "source", Props.getProperty("source-type"), dctmSource.getSchemaName(), dctmSource.getTableName(), !check && Boolean.parseBoolean(Props.getProperty("source-database-hash")));
             ColumnMetadata ciTarget = getColumnInfo(columnMap, "target", Props.getProperty("target-type"), dctmTarget.getSchemaName(), dctmTarget.getTableName(), !check && Boolean.parseBoolean(Props.getProperty("target-database-hash")));
 
-            Logging.write("info", THREAD_NAME, String.format("(source) Columns: %s", ciSource.columnList));
-            Logging.write("info", THREAD_NAME, String.format("(target) Columns: %s", ciTarget.columnList));
-            Logging.write("info", THREAD_NAME, String.format("(source) PK Columns: %s", ciSource.pkList));
-            Logging.write("info", THREAD_NAME, String.format("(target) PK Columns: %s", ciTarget.pkList));
+            Logging.write("info", THREAD_NAME, String.format("(源端) 列: %s", ciSource.columnList));
+            Logging.write("config", THREAD_NAME, String.format("(source) Columns: %s", ciSource.columnList));
+            Logging.write("info", THREAD_NAME, String.format("(目标端) 列: %s", ciTarget.columnList));
+            Logging.write("config", THREAD_NAME, String.format("(target) Columns: %s", ciTarget.columnList));
+            Logging.write("info", THREAD_NAME, String.format("(源端) 主键列: %s", ciSource.pkList));
+            Logging.write("config", THREAD_NAME, String.format("(source) PK Columns: %s", ciSource.pkList));
+            Logging.write("info", THREAD_NAME, String.format("(目标端) 主键列: %s", ciTarget.pkList));
+            Logging.write("config", THREAD_NAME, String.format("(target) PK Columns: %s", ciTarget.pkList));
 
-            Integer cid = rpc.dcrCreate(connRepo, dctmTarget.getTid(), dctmTarget.getTableAlias(), rid);
+
+            // TODO 防止 check再次插入dc_result表
+//            放到try外面去
+//            Integer cid = null;
+//            if (!check) {
+//                cid = rpc.dcrCreate(connRepo, dctmTarget.getTid(), dctmTarget.getTableAlias(), rid);
+//            }
 
             // Set Source & Target Variables
             // For useDatabaseHash, we do not want to use has if we are performing a recheck (check=true) or
@@ -143,30 +158,53 @@ public class ReconcileController {
                 default -> "";
             });
 
-            Logging.write("info", THREAD_NAME, String.format("(source) Compare SQL: %s", dctmSource.getCompareSQL()));
-            Logging.write("info", THREAD_NAME, String.format("(target) Compare SQL: %s", dctmTarget.getCompareSQL()));
+            Logging.write("info", THREAD_NAME, String.format("(源端) 比较 SQL: \n %s \n", dctmSource.getCompareSQL()));
+            Logging.write("config", THREAD_NAME, String.format("(source) Compare SQL: \n %s \n", dctmSource.getCompareSQL()));
+            Logging.write("info", THREAD_NAME, String.format("(目标端) 比较 SQL: \n %s \n", dctmTarget.getCompareSQL()));
+            Logging.write("config", THREAD_NAME, String.format("(target) Compare SQL: \n %s \n", dctmTarget.getCompareSQL()));
 
             if (check) {
-                checkResult = threadReconcileCheck.checkRows(Props, connRepo, connSource, connTarget, dct, dctmSource, dctmTarget, ciSource, ciTarget, cid);
+                Logging.write("info", THREAD_NAME, "正在进行检查对比中，请耐心等待---------------------------");
+                threadReconcileCheck.checkRows(Props, connRepo, connSource, connTarget, dct, dctmSource, dctmTarget, ciSource, ciTarget, cid);
                 result.put("checkResult", checkResult);
+                return result;
             } else {
                 // Execute Compare SQL
                 if (ciTarget.pkList.isBlank() || ciTarget.pkList.isEmpty() || ciSource.pkList.isBlank() || ciSource.pkList.isEmpty()) {
-                    Logging.write("warning", THREAD_NAME, String.format("Table %s has no Primary Key, skipping reconciliation",dctmTarget.getTableName()));
+                    String resultCNMessage = String.format("表 %s 未设置主键，因此跳过数据校验", dctmTarget.getTableName());
+                    String resultENMessage = String.format("Table %s has no Primary Key, skipping reconciliation", dctmTarget.getTableName());
+                    Logging.write("warning", THREAD_NAME, resultCNMessage);
+                    // Logging.write("warning", THREAD_NAME, String.format("Table %s has no Primary Key, skipping reconciliation", dctmTarget.getTableName()));
                     result.put("status", "skipped");
                     result.put("compareStatus", "skipped");
+                    // 重置并将状态存入数据库
+                    binds.clear();
                     binds.add(0, cid);
-                    dbCommon.simpleUpdate(connRepo, "UPDATE dc_result SET equal_cnt=0,missing_source_cnt=0,missing_target_cnt=0,not_equal_cnt=0,source_cnt=0,target_cnt=0,status='skipped' WHERE cid=?", binds, true);
+                    dbCommon.simpleUpdate(connRepo, "UPDATE dc_result SET equal_cnt=0,missing_source_cnt=0,missing_target_cnt=0,not_equal_cnt=0,source_cnt=0,target_cnt=0,status='skipped',result_message='"+resultCNMessage+"' WHERE cid=?", binds, true);
+                } else if (ciSource.isHasUnsupportedDatatype() || ciTarget.isHasUnsupportedDatatype()) {
+                    String resultCNMessage = String.format("表 %s 有不支持的数据类型，因此跳过数据校验", dctmTarget.getTableName());
+                    String resultENMessage = String.format("Table %s has unsupported data types, skipping reconciliation", dctmTarget.getTableName());
+                    Logging.write("warning", THREAD_NAME, resultCNMessage);
+                    // Logging.write("warning", THREAD_NAME, String.format("Table %s has unsupported data types, skipping reconciliation", dctmTarget.getTableName()));
+                    result.put("status", "skipped");
+                    result.put("compareStatus", "skipped");
+                    // 重置并将状态存入数据库
+                    binds.clear();
+                    binds.add(0, cid);
+                    dbCommon.simpleUpdate(connRepo, "UPDATE dc_result SET equal_cnt=0,missing_source_cnt=0,missing_target_cnt=0,not_equal_cnt=0,source_cnt=0,target_cnt=0,status='skipped',result_message='" + resultCNMessage + "' WHERE cid=?", binds, true);
                 } else {
-                    Logging.write("info", THREAD_NAME, "Starting compare hash threads");
+                    Logging.write("info", THREAD_NAME, "开启哈希比较线程");
+                    Logging.write("config", THREAD_NAME, "Starting compare hash threads");
 
                     // Start Reconciliation Threads
                     for (Integer i = 0; i < dct.getParallelDegree(); i++) {
-                        Logging.write("info", THREAD_NAME, "Creating data compare staging tables");
+                        Logging.write("info", THREAD_NAME, "创建数据比较临时表");
+                        Logging.write("config", THREAD_NAME, "Creating data compare staging tables");
                         String stagingTableSource = rpc.createStagingTable(Props, connRepo, "source", dct.getTid(), i);
                         String stagingTableTarget = rpc.createStagingTable(Props, connRepo, "target", dct.getTid(), i);
 
-                        Logging.write("info", THREAD_NAME, String.format("Starting compare thread %s",i));
+                        Logging.write("info", THREAD_NAME, String.format("启动比较线程 %s",i));
+                        Logging.write("config", THREAD_NAME, String.format("Starting compare thread %s",i));
 
                         // Start Observer Thread
                         ThreadSync ts = new ThreadSync();
@@ -197,6 +235,13 @@ public class ReconcileController {
                                 threadLoader clt = new threadLoader(Props, i, li, "target", qt, stagingTableTarget, ts);
                                 clt.start();
                                 loaderList.add(clt);
+                                Exception threadExceptionCls = cls.getThreadSync().getAndClearException();
+                                Exception threadExceptionClt = cls.getThreadSync().getAndClearException();
+                                if (threadExceptionCls != null) {
+                                    Logging.write("severe", THREAD_NAME, "threadLoader:" + threadExceptionCls.getMessage());
+                                } else if (threadExceptionClt != null) {
+                                    Logging.write("severe", THREAD_NAME, "threadLoader:" + threadExceptionClt.getMessage());
+                                }
                             }
                         }
 
@@ -205,15 +250,29 @@ public class ReconcileController {
 
                     }
 
-                    Logging.write("info", THREAD_NAME, "Waiting for compare threads to complete");
+                    Logging.write("info", THREAD_NAME, "等待比较线程完毕");
+                    Logging.write("config", THREAD_NAME, "Waiting for compare threads to complete");
                     // Check Threads
                     for (threadReconcile thread : compareList) {
                         thread.join();
+                        // 检查子线程是否有异常
+                        Exception threadException = thread.getThreadSync().getAndClearException();
+                        if (threadException != null) {
+                            StackTraceElement[] stackTrace = threadException.getStackTrace();
+                            Logging.write("severe", THREAD_NAME, "threadReconcile:" + threadException.getMessage());
+                        }
                     }
 
-                    Logging.write("info", THREAD_NAME, "Waiting for reconcile threads to complete");
+                    Logging.write("info", THREAD_NAME, "等待校验线程完毕");
+                    Logging.write("config", THREAD_NAME, "Waiting for reconcile threads to complete");
                     for (threadReconcileObserver thread : observerList) {
                         thread.join();
+                        // 检查子线程是否有异常
+                        Exception threadException = thread.getThreadSync().getAndClearException();
+                        if (threadException != null) {
+                            StackTraceElement[] stackTrace = threadException.getStackTrace();
+                            Logging.write("severe", THREAD_NAME, "threadReconcileObserver:" + threadException.getMessage());
+                        }
                     }
                 }
             }
@@ -227,13 +286,16 @@ public class ReconcileController {
             binds.add(0, dct.getTid());
             binds.add(1, dct.getTid());
 
-            Logging.write("info", THREAD_NAME, "Analyzing: Step 1 of 3 - Missing on Source");
+            Logging.write("info", THREAD_NAME, "分析：第 1 步（共 3 步） - 源端缺失");
+            Logging.write("config", THREAD_NAME, "Analyzing: Step 1 of 3 - Missing on Source");
             Integer missingSource = dbCommon.simpleUpdate(connRepo, SQL_REPO_DCSOURCE_MARKMISSING, binds, true);
 
-            Logging.write("info", THREAD_NAME, "Analyzing: Step 2 of 3 - Missing on Target");
+            Logging.write("info", THREAD_NAME, "分析：第 2 步（共 3 步） - 目标端缺失");
+            Logging.write("config", THREAD_NAME, "Analyzing: Step 2 of 3 - Missing on Target");
             Integer missingTarget = dbCommon.simpleUpdate(connRepo, SQL_REPO_DCTARGET_MARKMISSING, binds, true);
 
-            Logging.write("info", THREAD_NAME, "Analyzing: Step 3 of 3 - Not Equal");
+            Logging.write("info", THREAD_NAME, "分析：第 3 步（共 3 步） - 不相同");
+            Logging.write("config", THREAD_NAME, "Analyzing: Step 3 of 3 - Not Equal");
             Integer notEqual = dbCommon.simpleUpdate(connRepo, SQL_REPO_DCSOURCE_MARKNOTEQUAL, binds, true);
 
             dbCommon.simpleUpdate(connRepo, SQL_REPO_DCTARGET_MARKNOTEQUAL, binds, true);
@@ -270,19 +332,33 @@ public class ReconcileController {
 
             DecimalFormat formatter = new DecimalFormat("#,###");
 
-            String msgFormat = "Reconciliation Complete: Table = %s; Status = %s; Equal = %s; Not Equal = %s; Missing Source = %s; Missing Target = %s";
-            Logging.write("info", THREAD_NAME, String.format(msgFormat,dct.getTableAlias(), result.getString("compareStatus"), formatter.format(result.getInt("equal")), formatter.format(result.getInt("notEqual")), formatter.format(result.getInt("missingSource")), formatter.format(result.getInt("missingTarget"))));
+            String msgCNFormat = "校验完成: Table = %s; Status = %s; Equal = %s; Not Equal = %s; Missing Source = %s; Missing Target = %s";
+            String msgENFormat = "Reconciliation Complete: Table = %s; Status = %s; Equal = %s; Not Equal = %s; Missing Source = %s; Missing Target = %s";
+            Logging.write("info", THREAD_NAME, String.format(msgCNFormat,dct.getTableAlias(), result.getString("compareStatus"), formatter.format(result.getInt("equal")), formatter.format(result.getInt("notEqual")), formatter.format(result.getInt("missingSource")), formatter.format(result.getInt("missingTarget"))));
 
             result.put("status", "success");
 
         }  catch( SQLException e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
-            result.put("status", "failed");
-            Logging.write("severe", THREAD_NAME, String.format("Database error at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
+            if (!"skipped".equals(result.getString("status"))) {
+                result.put("status", "failed");
+                // 先清除再添加
+                binds.clear();
+                binds.add(0, cid);
+                dbCommon.simpleUpdate(connRepo, "UPDATE dc_result SET equal_cnt=0,missing_source_cnt=0,missing_target_cnt=0,not_equal_cnt=0,source_cnt=0,target_cnt=0,status='failed',compare_end=current_timestamp WHERE cid=?", binds, true);
+                Logging.write("severe", THREAD_NAME, String.format("数据库错误（在第 %s 行）：%s", stackTrace[0].getLineNumber(), e.getMessage()));
+                Logging.write("config", THREAD_NAME, String.format("Database error at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
+            }
         } catch (Exception e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
-            result.put("status", "failed");
-            Logging.write("severe", THREAD_NAME, String.format("Error in reconcile controller at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
+            if (!"skipped".equals(result.getString("status"))) {
+                result.put("status", "failed");
+                binds.clear();
+                binds.add(0, cid);
+                dbCommon.simpleUpdate(connRepo, "UPDATE dc_result SET equal_cnt=0,missing_source_cnt=0,missing_target_cnt=0,not_equal_cnt=0,source_cnt=0,target_cnt=0,status='failed',compare_end=current_timestamp WHERE cid=?", binds, true);
+                Logging.write("severe", THREAD_NAME, String.format("在第 %s 行的校验控制器中出现错误：%s", stackTrace[0].getLineNumber(), e.getMessage()));
+                Logging.write("config", THREAD_NAME, String.format("Error in reconcile controller at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
+            }
         }
 
         return result;
@@ -291,17 +367,20 @@ public class ReconcileController {
     private static Boolean reconcilePreflight(DCTable dct, DCTableMap dctmSource, DCTableMap dctmTarget, String columnMapping) {
         // Ensure target and source have mod_column if parallel_degree > 1
         if ( dct.getParallelDegree() > 1 && dctmSource.getModColumn().isEmpty() && dctmTarget.getModColumn().isEmpty() ) {
-            Logging.write("severe",THREAD_NAME, String.format("Parallel degree is greater than 1 for table %s, but no value specified for mod_column on source and/or target.",dct.getTableAlias()));
+            Logging.write("severe",THREAD_NAME, String.format("表“%s”的并行度大于 1，但源表和/或目标表中未指定“模列”的值.",dct.getTableAlias()));
+            Logging.write("config",THREAD_NAME, String.format("Parallel degree is greater than 1 for table %s, but no value specified for mod_column on source and/or target.",dct.getTableAlias()));
             return false;
         }
 
         // Verify column mapping exists
         if (columnMapping == null) {
-            Logging.write("severe",THREAD_NAME, String.format("No column map found for table %s.  Consider running with maponly option to create mappings.",dct.getTableAlias()));
+            Logging.write("severe",THREAD_NAME, String.format("未找到表 %s 的列映射。建议使用“maponly”选项运行以创建映射.",dct.getTableAlias()));
+            Logging.write("config",THREAD_NAME, String.format("No column map found for table %s.  Consider running with maponly option to create mappings.",dct.getTableAlias()));
             return false;
         }
 
         return true;
     }
+
 
 }

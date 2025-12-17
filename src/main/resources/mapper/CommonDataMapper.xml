@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.crunchydata.mapper.CommonDataMapper">
+
+    <select id="pageList" parameterType="java.util.HashMap" resultType="com.crunchydata.models.CommonData">
+        SELECT * FROM common_data
+        <trim prefix="WHERE" prefixOverrides="AND | OR" >
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+        </trim>
+        ORDER BY id DESC
+        LIMIT #{pagesize} offset #{offset}
+    </select>
+
+    <select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
+        SELECT count(1)
+        FROM common_data
+        <trim prefix="WHERE" prefixOverrides="AND | OR" >
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+        </trim>
+    </select>
+
+</mapper>

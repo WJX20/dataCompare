@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PgApplication {
+public class DataCompareApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(PgApplication.class, args);
+        SpringApplication.run(DataCompareApplication.class, args);
     }
 }

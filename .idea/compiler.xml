@@ -8,15 +8,18 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
       </profile>
-      <profile name="Annotation profile for pgCompare" enabled="true">
+      <profile name="Annotation profile for dataCompare" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar" />
           <entry name="C:/Java/apache-maven-3.8.6/mvn_repository/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar" />
         </processorPath>
-        <module name="pgCompare" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="pgCompare" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>

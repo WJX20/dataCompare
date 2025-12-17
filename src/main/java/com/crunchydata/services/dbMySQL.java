@@ -103,7 +103,12 @@ public class dbMySQL {
                 colExpression = "coalesce(date_format(" + columnName + ",'%m%d%Y%H%i%S'),' ')";
             }
         } else if ( Arrays.asList(charTypes).contains(column.getString("dataType").toLowerCase()) ) {
-            colExpression = column.getInt("dataLength") > 1 ? "case when length(" + columnName + ")=0 then ' ' else coalesce(trim(" + columnName + "),' ') end" :  "case when length(" + columnName + ")=0 then ' ' else trim(" + columnName + ") end";
+            // json 单独处理,保证格式规范化
+            if (column.getString("dataType").toLowerCase().contains("json")) {
+                colExpression = "case when col_json is null or length(trim(replace(replace(col_json, ' ', ''), '\\t', ''))) = 0 then ' ' else trim(replace(replace(col_json, ' ', ''), '\\t', '')) end";
+            } else {
+                colExpression = column.getInt("dataLength") > 1 ? "case when length(" + columnName + ")=0 then ' ' else coalesce(trim(" + columnName + "),' ') end" :  "case when length(" + columnName + ")=0 then ' ' else trim(" + columnName + ") end";
+            }
         } else if ( Arrays.asList(binaryTypes).contains(column.getString("dataType").toLowerCase()) ) {
             colExpression = "coalesce(md5(" + columnName +"), ' ')";
         } else {

@@ -153,9 +153,23 @@ public class threadLoader extends Thread  {
         } catch( SQLException e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
             Logging.write("severe", threadName, String.format("Database error at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
+//            if (ts != null) {
+//                ts.setException(e);
+//            }
+            synchronized (ts) {
+                ts.setException(e);
+                ts.notifyAll();
+            }
         } catch (Exception e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
             Logging.write("severe", threadName, String.format("Error in loader thread at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
+//            if (ts != null) {
+//                ts.setException(e);
+//            }
+            synchronized (ts) {
+                ts.setException(e);
+                ts.notifyAll();
+            }
         } finally {
             // Close PreparedStatement and Connection in finally block
             try {
@@ -171,5 +185,9 @@ public class threadLoader extends Thread  {
                 Logging.write("severe", threadName, String.format("Error closing connections at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
             }
         }
+    }
+
+    public ThreadSync getThreadSync() {
+        return ts;
     }
 }

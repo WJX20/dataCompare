@@ -44,6 +44,7 @@ package com.crunchydata.util;
  */
 public class ThreadSync {
 
+    private Exception exception;
     public volatile boolean sourceComplete = false;
     public volatile boolean targetComplete = false;
 
@@ -52,17 +53,19 @@ public class ThreadSync {
 
     public volatile int loaderThreadComplete = 0;
 
+    public volatile boolean exceptionSet = false;
+
     /**
      * Causes the current thread to wait until it is notified.
      * This method must be called from a synchronized context.
      */
     public synchronized void observerWait() {
-            try {
-                wait();
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                Thread.currentThread().interrupt(); // Restore interrupted status
-            }
+        try {
+            wait();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            Thread.currentThread().interrupt(); // Restore interrupted status
+        }
     }
 
     /**
@@ -75,6 +78,28 @@ public class ThreadSync {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+    }
+
+    /**
+     * 线程安全地设置异常
+     */
+    public synchronized void setException(Exception e) {
+        this.exception = e;
+        this.exceptionSet = true;
+        notifyAll(); // 通知等待的线程
+    }
+
+    /**
+     * 线程安全地获取异常，并重置状态
+     */
+    public synchronized Exception getAndClearException() {
+        if (exceptionSet) {
+            Exception ex = exception;
+            exception = null;
+            exceptionSet = false;
+            return ex;
+        }
+        return null;
     }
 
 }

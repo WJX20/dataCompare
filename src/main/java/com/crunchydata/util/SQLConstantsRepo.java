@@ -439,6 +439,8 @@ public interface SQLConstantsRepo {
 
     String SQL_REPO_DCTABLEHISTORY_UPDATE = "UPDATE dc_table_history set end_dt=current_timestamp, row_count=?, action_result=?::jsonb WHERE tid=? AND action_type=? and load_id=? and batch_nbr=?";
 
+    String SQL_REPO_DCTABLEHISTORY_END_UPDATE = "UPDATE dc_table_history set end_dt=current_timestamp WHERE tid=? AND action_type=? and load_id=? and batch_nbr=?";
+
     //
     // Repository SQL - DC_TABLE_MAP
     //

@@ -51,7 +51,8 @@ public class TableController {
         //
         // Clean previous Discovery
         //
-        Logging.write("info", THREAD_NAME, "Clearing previous discovery");
+        Logging.write("info", THREAD_NAME, "清除之前的表结构发现");
+        Logging.write("config", THREAD_NAME, "Clearing previous discovery");
         dbCommon.simpleUpdate(connRepo, sql, binds, true);
 
         // Clean up orphaned tables
@@ -79,12 +80,14 @@ public class TableController {
                 binds.add(0,crs.getInt("tid"));
 
                 Logging.write("warning",THREAD_NAME,String.format("Skipping table %s due to incomplete mapping (missing source or target)",crs.getString("table_alias")));
+                Logging.write("config",THREAD_NAME,String.format("由于映射不完整（缺少源数据或目标数据），跳过表 %s",crs.getString("table_alias")));
                 dbCommon.simpleUpdate(connRepo,SQL_REPO_DCTABLE_DELETEBYTID, binds,true);
             }
 
             crs.close();
         } catch (Exception e) {
-            Logging.write("warning",THREAD_NAME,String.format("Error clearing incomplete map: %s",e.getMessage()));
+            Logging.write("warning",THREAD_NAME,String.format("清除未完成的映射时出错：%s",e.getMessage()));
+            Logging.write("config",THREAD_NAME,String.format("Error clearing incomplete map: %s",e.getMessage()));
         }
     }
 
@@ -112,6 +115,7 @@ public class TableController {
             }
         } catch (Exception e) {
             Logging.write("severe", THREAD_NAME, String.format("Error retrieving table mapping for tid %d:  %s", tid, e.getMessage()));
+            Logging.write("config", THREAD_NAME, String.format("获取表映射信息时出现错误，错误tid为：%d，错误信息为：%s", tid, e.getMessage()));
             return result;
         }
 
@@ -136,7 +140,8 @@ public class TableController {
         ArrayList<Object> binds = new ArrayList<>();
         Integer tableCount = 0;
 
-        Logging.write("info", THREAD_NAME, String.format("(%s) Performing table discovery on %s for schema %s",destRole, destType,schema));
+        Logging.write("info", THREAD_NAME, String.format("（%s）正在对 %s 数据表按照模式 %s 进行表结构发现操作",destRole, destType,schema));
+        Logging.write("config", THREAD_NAME, String.format("(%s) Performing table discovery on %s for schema %s",destRole, destType,schema));
 
         // Get Tables based on Platform
         JSONArray tables = getDatabaseTables(destType,connDest,schema, table);
@@ -163,7 +168,8 @@ public class TableController {
                 if ( populateDCTable ) {
                     dct = RepoController.saveTable(connRepo, dct);
                 } else {
-                    Logging.write("warning", THREAD_NAME, String.format("(%s) Skipping, table %s not found on other destination", destRole, tableName));
+                    Logging.write("warning", THREAD_NAME, String.format("（%s）跳过，因为在其他目标位置未找到表 %s", destRole, tableName));
+                    Logging.write("config", THREAD_NAME, String.format("(%s) Skipping, table %s not found on other destination", destRole, tableName));
                 }
             } else {
                 dct.setTid(tid);
@@ -181,12 +187,14 @@ public class TableController {
 
                 RepoController.saveTableMap(connRepo, dctm);
 
-                Logging.write("info", THREAD_NAME, String.format("(%s) Discovered Table: %s",destRole, tableName));
+                Logging.write("info", THREAD_NAME, String.format("(%s) 已发现表: %s",destRole, tableName));
+                Logging.write("config", THREAD_NAME, String.format("(%s) Discovered Table: %s",destRole, tableName));
 
             }
         }
 
-        Logging.write("info", THREAD_NAME, String.format("(%s) Discovered %d tables on %s for for schema %s", destRole, tableCount, destType, schema));
+        Logging.write("info", THREAD_NAME, String.format("（%s）在 %s 数据库中发现了 %d 个表，属于 %s 模式", destRole, destType, tableCount, schema));
+        Logging.write("config", THREAD_NAME, String.format("(%s) Discovered %d tables on %s for schema %s", destRole, tableCount, destType, schema));
 
     }
 }

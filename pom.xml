@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.wugui</groupId>
-    <artifactId>pgCompare</artifactId>
+    <artifactId>dataCompare</artifactId>
     <version>1.0</version>
 
     <properties>

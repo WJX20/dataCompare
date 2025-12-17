@@ -30,6 +30,4 @@ public class JobJdbcDatasourceController{
         return jobJdbcDatasourceService.getById(id);
     }
 
-
-
 }

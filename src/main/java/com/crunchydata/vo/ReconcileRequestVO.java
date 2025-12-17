@@ -13,12 +13,13 @@ import java.util.List;
 public class ReconcileRequestVO {
     private Integer batchNumber;    // 批次号
     private Integer pid;
-    private String projectName;
+    private String projectName;     // 项目名称
     private boolean check;
     private String sourceSchema;    // 源模式
     private String targetSchema;    // 目标模式
     private List<String> tables;    // 表列表
     private Double percentage;      // 校验百分比
-    private Integer sourceId;       // 源 ID
-    private Integer targetId;       // 目标 ID
+    private Long sourceId;       // 源 ID
+    private Long targetId;       // 目标 ID
+    private String logFileName;     // 数据校验日志名称
 }

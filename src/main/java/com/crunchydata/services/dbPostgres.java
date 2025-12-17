@@ -92,9 +92,18 @@ public class dbPostgres {
                 colExpression = "coalesce(to_char(" + columnName + ",'MMDDYYYYHH24MISS'),' ')";
             }
         } else if ( Arrays.asList(charTypes).contains(column.getString("dataType").toLowerCase()) ) {
-            colExpression = "coalesce(case when length(coalesce(trim(" + columnName + "::text),''))=0 then ' ' else trim(" + columnName + "::text) end,' ')";
+            // json 单独处理,保证格式规范化
+            if (column.getString("dataType").toLowerCase().contains("json")) {
+                colExpression = "case when col_json is null or length(trim(replace(replace(col_json::jsonb::text, ' ', ''), E'\\t', ''))) = 0 then ' ' else trim(replace(replace(col_json::jsonb::text, ' ', ''), E'\\t', '')) end";
+            } else {
+                colExpression = "coalesce(case when length(coalesce(trim(" + columnName + "::text),''))=0 then ' ' else trim(" + columnName + "::text) end,' ')";
+            }
         } else if ( Arrays.asList(binaryTypes).contains(column.getString("dataType").toLowerCase()) ) {
-            colExpression = "coalesce(md5(" + columnName +"), ' ')";
+            if (column.getString("dataType").toLowerCase().contains("raw")) {
+                colExpression = "coalesce(md5(decode(" + columnName + "::text, 'hex')) , ' ')";
+            } else {
+                colExpression = "coalesce(md5(" + columnName + "), ' ')";
+            }
         } else {
             colExpression = "coalesce(case when length(coalesce(" + columnName + "::text,''))=0 then ' ' else " + columnName + "::text end,' ')";
         }

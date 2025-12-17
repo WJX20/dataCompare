@@ -126,7 +126,8 @@ public class ColumnUtility {
             crs.close();
 
         } catch (Exception e) {
-            Logging.write("severe",THREAD_NAME,String.format("Error locating primary key column map: %s",e.getMessage()));
+            Logging.write("severe",THREAD_NAME,String.format("无法定位主键列映射：%s",e.getMessage()));
+            Logging.write("config",THREAD_NAME,String.format("Error locating primary key column map: %s",e.getMessage()));
         }
 
         return columnFilter;
@@ -163,7 +164,8 @@ public class ColumnUtility {
                     while (rs.next()) {
                         JSONObject column = new JSONObject();
                         if (Arrays.asList(unsupportedDataTypes).contains(rs.getString("data_type").toLowerCase())) {
-                            Logging.write("warning", THREAD_NAME, String.format("Unsupported data type (%s) for column (%s)", rs.getString("data_type"), rs.getString("column_name")));
+                            Logging.write("warning", THREAD_NAME, String.format("不支持的数据类型（%s）用于列（%s）", rs.getString("data_type"), rs.getString("column_name")));
+                            Logging.write("config", THREAD_NAME, String.format("Unsupported data type (%s) for column (%s)", rs.getString("data_type"), rs.getString("column_name")));
                             column.put("supported", false);
                         } else {
                             column.put("supported", true);
@@ -194,7 +196,8 @@ public class ColumnUtility {
                     rs.close();
                     stmt.close();
                 } catch (Exception e) {
-                    Logging.write("severe", THREAD_NAME, String.format("Error retrieving columns for table %s.%s:  %s", schema, table, e.getMessage()));
+                    Logging.write("severe", THREAD_NAME, String.format("无法获取表 %s.%s 的列信息:  %s", schema, table, e.getMessage()));
+                    Logging.write("config", THREAD_NAME, String.format("Error retrieving columns for table %s.%s:  %s", schema, table, e.getMessage()));
                 }
                 return columnInfo;
     }

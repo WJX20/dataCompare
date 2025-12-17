@@ -54,7 +54,7 @@ public class threadReconcileObserver extends Thread  {
     private final Integer batchNbr;
     private final String stagingTableSource;
     private final String stagingTableTarget;
-    private ThreadSync ts;
+    private final ThreadSync ts;
     private Properties Props;
     private final Boolean useLoaderThreads;
 
@@ -90,7 +90,8 @@ public class threadReconcileObserver extends Thread  {
      */
     public void run() {
         String threadName = String.format("Observer-c%s-t%s", cid, threadNbr);
-        Logging.write("info", threadName, "Starting reconcile observer");
+        Logging.write("info", threadName, "启动比对观察者线程");
+        Logging.write("config", threadName, "Starting reconcile observer");
 
         ArrayList<Object> binds = new ArrayList<>();
         int cntEqual = 0;
@@ -102,11 +103,13 @@ public class threadReconcileObserver extends Thread  {
         int sleepTime = 1000;
 
         // Connect to Repository
-        Logging.write("info", threadName, "Connecting to repository database");
+        Logging.write("info", threadName, "正在连接存储库...");
+        Logging.write("config", threadName, "Connecting to repository database");
         Connection repoConn = dbPostgres.getConnection(Props,"repo", "observer");
 
         if ( repoConn == null) {
-            Logging.write("severe", threadName, "Cannot connect to repository database");
+            Logging.write("severe", threadName, "无法连接到存储库数据库");
+            Logging.write("config", threadName, "Cannot connect to repository database");
             System.exit(1);
         }
 
@@ -134,6 +137,12 @@ public class threadReconcileObserver extends Thread  {
             int tmpRowCount;
 
             while (lastRun <= 1) {
+                // 优先检查异常：若 Reconcile 线程已设置异常，立即退出循环
+                if (ts.exceptionSet) {
+                    Logging.write("severe", threadName, "校验线程检测到异常，正在退出观察.");
+                    Logging.write("config", threadName, "Detected exception from reconcile thread, exiting observer.");
+                    break; // 退出循环，不再等待正常完成信号
+                }
                 // Remove Matching Rows
                 tmpRowCount = stmtSU.executeUpdate();
 
@@ -142,7 +151,8 @@ public class threadReconcileObserver extends Thread  {
                 if (tmpRowCount > 0) {
                     repoConn.commit();
                     deltaCount += tmpRowCount;
-                    Logging.write("info", threadName, String.format("Matched %s rows", formatter.format(tmpRowCount)));
+                    Logging.write("info", threadName, String.format("匹配了 %s 行数据", formatter.format(tmpRowCount)));
+                    Logging.write("config", threadName, String.format("Matched %s rows", formatter.format(tmpRowCount)));
                 } else {
                     if (cntEqual > 0 || ts.sourceComplete || ts.targetComplete || ( cntEqual == 0 && ts.sourceWaiting && ts.targetWaiting ) ) {
                         stmtSUS.clearParameters();
@@ -168,7 +178,16 @@ public class threadReconcileObserver extends Thread  {
 
                 if ( tmpRowCount == 0 ) {
                     if (Props.getProperty("database-sort").equals("false") && cntEqual == 0) { ts.observerNotify(); }
-                    Thread.sleep(sleepTime);
+//                    Thread.sleep(sleepTime);
+                    // 关键：用 wait 替代 sleep，响应 setException() 的 notifyAll() 唤醒
+                    synchronized (ts) { // 需在同步块中调用 wait
+                        try {
+                            ts.wait(sleepTime); // 超时等待 1 秒，避免永久阻塞
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break; // 中断时退出
+                        }
+                    }
                 } else {
                     // Standard Sleep
                     if ( cntEqual > 500000 ) {
@@ -177,10 +196,21 @@ public class threadReconcileObserver extends Thread  {
                 }
             }
 
+            // 循环退出后处理异常
+            if (ts.exceptionSet) {
+                Exception ex = ts.getAndClearException();
+                Logging.write("severe", threadName, "观察因校验错误而终止: " + ex.getMessage());
+                Logging.write("config", threadName, "Observer aborted due to reconcile error: " + ex.getMessage());
+                if (ts != null) {
+                    ts.setException(ex);
+                }
+            }
+
             stmtSUS.close();
             stmtSU.close();
 
-            Logging.write("info", threadName, "Staging table cleanup");
+            Logging.write("info", threadName, "清理临时表");
+            Logging.write("config", threadName, "Staging table cleanup");
 
             // Move Out-of-Sync rows from temporary staging tables to dc_source and dc_target
             rpc.loadFindings(repoConn, "source", tid, tableAlias, stagingTableSource, batchNbr, threadNbr);
@@ -193,20 +223,34 @@ public class threadReconcileObserver extends Thread  {
 
         } catch (Exception e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
-            Logging.write("severe", threadName, String.format("Error in observer process at line %s: %s", stackTrace[0].getLineNumber(), e.getMessage()));
+            Logging.write("severe", threadName, String.format("观察者进程在第 %s 行出现错误：%s", stackTrace[0].getLineNumber(), e.getMessage()));
+            Logging.write("config", threadName, String.format("Error in observer process at line %s: %s", stackTrace[0].getLineNumber(), e.getMessage()));
             try { repoConn.rollback();
             } catch (Exception ee) {
                 stackTrace = e.getStackTrace();
-                Logging.write("warn", threadName, String.format("Error rolling back transaction at line %s: %s ",stackTrace[0].getLineNumber(), e.getMessage()));
+                Logging.write("warning", threadName, String.format("在第 %s 行回滚事务时出现错误：%s ",stackTrace[0].getLineNumber(), e.getMessage()));
+                Logging.write("config", threadName, String.format("Error rolling back transaction at line %s: %s ",stackTrace[0].getLineNumber(), e.getMessage()));
+            }
+            if (ts != null) {
+                ts.setException(e);
             }
         } finally {
             try {
                 repoConn.close();
             } catch (Exception e) {
                 StackTraceElement[] stackTrace = e.getStackTrace();
-                Logging.write("warn", threadName, String.format("Error closing thread at line %s:  %s",stackTrace[0].getLineNumber(), e.getMessage()));
+                Logging.write("warning", threadName, String.format("在第 %s 行关闭线程时出现错误：%s",stackTrace[0].getLineNumber(), e.getMessage()));
+                Logging.write("config", threadName, String.format("Error closing thread at line %s:  %s",stackTrace[0].getLineNumber(), e.getMessage()));
+                if (ts != null) {
+                    ts.setException(e);
+                }
             }
         }
+    }
+
+    // 添加获取ThreadSync方法，用于获取异常
+    public ThreadSync getThreadSync() {
+        return ts;
     }
 
 }

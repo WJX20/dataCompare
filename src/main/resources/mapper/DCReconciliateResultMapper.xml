@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.crunchydata.mapper.DCReconciliateResultMapper">
+
+    <resultMap id="contrastResultDetailsMap" type="com.crunchydata.models.DCReconciliationResult">
+        <id column="id" property="id"/>
+        <result column="pid" property="pid"/>
+        <result column="tid" property="tid"/>
+        <result column="table_name" property="tableName"/>
+        <result column="pk" property="pk"/>
+        <result column="compare_status" property="compareStatus"/>
+        <result column="result_details" property="resultDetails"/>
+    </resultMap>
+
+    <select id="pageList" resultMap="contrastResultDetailsMap">
+        SELECT
+        drr.id,
+        drr.pid,
+        drr.tid,
+        drr.table_name,
+        drr.pk,
+        drr.compare_status,
+        drr.result_details
+        FROM
+        dc_reconciliation_results drr
+        WHERE
+        <if test="tid != null and tid != ''">
+            drr.tid = #{tid}
+        </if>
+        ORDER BY
+        drr.id ASC
+        LIMIT #{pagesize} OFFSET #{offset}
+    </select>
+
+    <select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
+        SELECT count(1)
+        FROM dc_reconciliation_results drr
+        where
+        <if test="tid != null and tid != ''">
+            drr.tid = #{tid}
+        </if>
+    </select>
+
+</mapper>

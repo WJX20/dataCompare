@@ -25,6 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DataCompare {
+    private Integer pid;
     private Integer tid;
     private String tableName;
     private String pkHash;

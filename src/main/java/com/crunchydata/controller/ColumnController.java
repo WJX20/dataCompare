@@ -31,7 +31,8 @@ public class ColumnController {
      * @return                 A ColumnMetadata object containing column information
      */
     public static ColumnMetadata getColumnInfo(JSONObject columnMap, String targetType, String platform, String schema, String table, Boolean useDatabaseHash) {
-        Logging.write("info", THREAD_NAME, String.format("(%s) Building column expressions for %s.%s",targetType, schema,table));
+        Logging.write("info", THREAD_NAME, String.format("（%s）为 %s.%s 构建列表达式",targetType, schema,table));
+        Logging.write("config", THREAD_NAME, String.format("(%s) Building column expressions for %s.%s",targetType, schema,table));
 
         // Variables
         StringBuilder column = new StringBuilder();
@@ -43,6 +44,8 @@ public class ColumnController {
         StringBuilder pkJSON = new StringBuilder();
         StringBuilder pkList = new StringBuilder();
 
+        boolean hasUnsupported = false;
+
         // Construct Columns
         try {
             JSONArray columnsArray = columnMap.getJSONArray("columns");
@@ -50,6 +53,13 @@ public class ColumnController {
                 JSONObject columnObject = columnsArray.getJSONObject(i);
 
                 JSONObject joColumn = columnObject.getJSONObject(targetType);
+
+                // 检查当前字段是否不支持（从 columnMap 中读取 supported 标记，该标记来自 ColumnUtility 的判断）
+                if (joColumn.has("supported") && !joColumn.getBoolean("supported")) {
+                    hasUnsupported = true; // 只要有一个字段不支持，整体标记为true
+                    Logging.write("warning", THREAD_NAME, String.format("（%s）表 %s.%s 中存在不支持的列：%s", targetType, schema, table, joColumn.getString("columnName")));
+                    Logging.write("config", THREAD_NAME, String.format("(%s) Table %s.%s has unsupported column: %s", targetType, schema, table, joColumn.getString("columnName")));
+                }
 
                 if (joColumn.getBoolean("primaryKey")) {
                     String pkColumn = (joColumn.getBoolean("preserveCase")) ? ShouldQuoteString(joColumn.getBoolean("preserveCase"), joColumn.getString("columnName")) : joColumn.getString("columnName").toLowerCase();
@@ -106,16 +116,18 @@ public class ColumnController {
 
         } catch (Exception e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
-            Logging.write("severe", THREAD_NAME, String.format("Error while parsing column list at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
+            Logging.write("severe", THREAD_NAME, String.format("在解析列列表时出现错误，错误行号为：%s，错误信息为：%s", stackTrace[0].getLineNumber(), e.getMessage()));
+            Logging.write("config", THREAD_NAME, String.format("Error while parsing column list at line %s:  %s", stackTrace[0].getLineNumber(), e.getMessage()));
         }
 
         // Using the concat operator causes issues for mariadb.  Have to convert from using operator (||)
         // to using concat function.
+        // mysql 也需要
         if ( platform.equals("mariadb") || platform.equals("mysql")) {
             pkJSON = new StringBuilder("concat(" + pkJSON.toString().replace("||",",") + ")");
         }
 
-        return new ColumnMetadata(columnList.toString(), nbrColumns, nbrPKColumns, column.toString(), pk.toString(), pkList.toString(), pkJSON.toString());
+        return new ColumnMetadata(columnList.toString(), nbrColumns, nbrPKColumns, column.toString(), pk.toString(), pkList.toString(), pkJSON.toString(), hasUnsupported);
 
     }
 
@@ -156,7 +168,8 @@ public class ColumnController {
             crs.close();
         } catch (Exception e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
-            Logging.write("severe",THREAD_NAME, String.format("Error retrieving columns for project %d on %s at line %s: %s",pid,"target",stackTrace[0].getLineNumber(), e.getMessage()));
+            Logging.write("severe",THREAD_NAME, String.format("在 %s 上的第 %s 行获取项目 %d 的列信息时出现错误：%s","target",stackTrace[0].getLineNumber(), pid, e.getMessage()));
+            Logging.write("config",THREAD_NAME, String.format("Error retrieving columns for project %d on %s at line %s: %s",pid,"target",stackTrace[0].getLineNumber(), e.getMessage()));
             System.exit(1);
         }
 
@@ -178,7 +191,8 @@ public class ColumnController {
             crs.close();
         } catch (Exception e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
-            Logging.write("severe",THREAD_NAME, String.format("Error retrieving columns for project %d on %s at line %s: %s",pid,"source", stackTrace[0].getLineNumber(), e.getMessage()));
+            Logging.write("severe",THREAD_NAME, String.format("在 %s 上的第 %s 行获取项目 %d 的列信息时出现错误：%s","source", stackTrace[0].getLineNumber(), pid, e.getMessage()));
+            Logging.write("config",THREAD_NAME, String.format("Error retrieving columns for project %d on %s at line %s: %s",pid,"source", stackTrace[0].getLineNumber(), e.getMessage()));
             System.exit(1);
         }
 
@@ -189,7 +203,8 @@ public class ColumnController {
         ArrayList<Object> binds = new ArrayList<>();
         Integer columnCount = 0;
 
-        Logging.write("info", THREAD_NAME, String.format("(%s) Performing column discovery on %s for table %s", destRole, destType, tableName));
+        Logging.write("info", THREAD_NAME, String.format("（%s）正在对表 %s 中的 %s 列进行列信息的发现操作", destRole, tableName, destType));
+        Logging.write("config", THREAD_NAME, String.format("(%s) Performing column discovery on %s for table %s", destRole, destType, tableName));
 
         // Get Tables based on Platform
         JSONArray columns = getColumns(Props, connDest,schema,tableName, destRole);
@@ -214,7 +229,8 @@ public class ColumnController {
                 if ( populateDCTableColumn ) {
                     dtc = RepoController.saveTableColumn(connRepo, dtc);
                 } else {
-                    Logging.write("warning", THREAD_NAME, String.format("Skipping column since no column alias found for %s on table %s.", columnName, tableName));
+                    Logging.write("warning", THREAD_NAME, String.format("由于在表 %s 中未找到列别名，所以跳过该列.",tableName ,columnName));
+                    Logging.write("config", THREAD_NAME, String.format("Skipping column since no column alias found for %s on table %s.", columnName, tableName));
                 }
             } else {
                 dtc.setColumnID(cid);
@@ -241,12 +257,14 @@ public class ColumnController {
 
                 RepoController.saveTableColumnMap(connRepo, dctcm);
 
-                Logging.write("info", THREAD_NAME, String.format("(%s) Discovered Column: %s",destRole,columnName));
+                Logging.write("config", THREAD_NAME, String.format("(%s) 已发现列: %s",destRole,columnName));
+                Logging.write("config", THREAD_NAME, String.format("(%s) Discovered Column: %s",destRole,columnName));
 
             }
         }
 
-        Logging.write("info", THREAD_NAME, String.format("(%s) Discovered %d columns for table %s",destRole, columnCount, tableName));
+        Logging.write("info", THREAD_NAME, String.format("（%s）已发现表 %s 中有 %d 列",destRole, tableName, columnCount));
+        Logging.write("config", THREAD_NAME, String.format("(%s) Discovered %d columns for table %s",destRole, columnCount, tableName));
 
     }
 

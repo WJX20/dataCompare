@@ -97,6 +97,9 @@ public class dbOracle {
         } else if ( Arrays.asList(charTypes).contains(column.getString("dataType").toLowerCase()) ) {
             if (column.getString("dataType").toLowerCase().contains("lob")) {
                 colExpression = "nvl(trim(to_char(" + columnName + ")),' ')";
+//                目标编码utf8,源oracle编码utf16
+            } else if (column.getString("dataType").toLowerCase().contains("nvarchar2") || column.getString("dataType").toLowerCase().contains("nchar")) {
+                colExpression = "UTL_RAW.CAST_TO_VARCHAR2(UTL_RAW.CONVERT(UTL_RAW.CAST_TO_RAW(nvl(trim(" + columnName + "), ' ')), 'AL32UTF8', 'AL16UTF16'))";
             } else {
                 if (column.getInt("dataLength") > 1) {
                     colExpression = "nvl(trim(" + columnName + "),' ')";

@@ -33,4 +33,5 @@ public class ColumnMetadata {
     public String pk;
     public String pkList;
     public String pkJSON;
+    public boolean hasUnsupportedDatatype;
 }

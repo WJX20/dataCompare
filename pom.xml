@@ -184,6 +184,10 @@
                                 <version>${lombok.version}</version>
                             </path>
                         </annotationProcessorPaths>
+                        <!-- 新增：添加 -parameters 选项，保留方法参数名 -->
+                        <compilerArgs>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
             </plugins>

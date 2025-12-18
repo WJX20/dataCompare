@@ -48,7 +48,7 @@ public class PgCompareController {
     private DCConfigurationsService dcConfigurationsService;
 
     @PostMapping("/reconcileData")
-    public ReturnT<String> performReconciliation(@RequestBody(required = false) ReconcileRequestVO requestVO, boolean check) {
+    public ReturnT<String> performReconciliation(@RequestBody(required = false) ReconcileRequestVO requestVO) {
         try {
 
 //            // 1. 使用 CrossPlatformPathUtils 获取统一的 meta 基础目录
@@ -111,7 +111,7 @@ public class PgCompareController {
 //            jobDataContrast.setWriterSchema(requestVO.getTargetSchema());
 //            jobDataContrastMapper.save(jobDataContrast);
             // 第一步：发现表和列,数据对比映射 (check = false)
-            check = false;
+            boolean check = false;
             Logging.write("info", "main", "收到校验请求，批次: " + requestVO.getBatchNumber() + ", check: false");
             pgCompareService.performReconciliation(requestVO, check);
 

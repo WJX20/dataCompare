@@ -14,12 +14,15 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="C:/Java/apache-maven-3.8.6/mvn_repository/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar" />
+          <entry name="C:/Java/apache-maven-3.8.6/mvn_repository/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar" />
         </processorPath>
         <module name="dataCompare" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="dataCompare" target="17" />
-    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="dataCompare" options="-parameters" />
+    </option>
   </component>
 </project>

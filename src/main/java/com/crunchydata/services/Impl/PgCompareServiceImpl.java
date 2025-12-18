@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.rowset.CachedRowSet;
 import java.sql.Connection;
@@ -55,26 +56,26 @@ public class PgCompareServiceImpl implements PgCompareService {
     private DCProjectMapper dcProjectMapper;
 
     // 删除用到
-//    @Autowired
-//    private JobDataContrastMapper jobDataContrastMapper;
-//
-//    @Autowired
-//    private DCTableMapper dcTableMapper;
+    @Autowired
+    private JobDataContrastMapper jobDataContrastMapper;
+
+    @Autowired
+    private DCTableMapper dcTableMapper;
 
     @Autowired
     private DCReconciliateResultMapper dcReconciliateResultMapper;
 
-//    @Autowired
-//    private DCTableHistoryMapper dcTableHistoryMapper;
-//
-//    @Autowired
-//    private DCSourceMapper dcSourceMapper;
-//
-//    @Autowired
-//    private DCTargetMapper dcTargetMapper;
-//
-//    @Autowired
-//    private DCResultMapper dcResultMapper;
+    @Autowired
+    private DCTableHistoryMapper dcTableHistoryMapper;
+
+    @Autowired
+    private DCSourceMapper dcSourceMapper;
+
+    @Autowired
+    private DCTargetMapper dcTargetMapper;
+
+    @Autowired
+    private DCResultMapper dcResultMapper;
     @Autowired
     private CommonDataMapper commonDataMapper;
 
@@ -256,27 +257,27 @@ public class PgCompareServiceImpl implements PgCompareService {
     }
 
 
-//    @Override
-//    @Transactional(rollbackFor = Exception.class)
-//    public ReturnT<String> deleteByPid(int pid) {
-//
-//        jobDataContrastMapper.deleteByPid(pid);
-//        dcProjectMapper.deleteByPid(pid);
-//        commonDataMapper.deleteByPid(pid);
-//
-//        // 查询关联的表ID
-//        List<Integer> tids = dcTableMapper.selectTidsByPid(pid);
-//        if (tids != null && !tids.isEmpty()) {
-//            dcTableHistoryMapper.deleteByTids(tids);
-//            dcSourceMapper.deleteByTids(tids);
-//            dcTargetMapper.deleteByTids(tids);
-//            dcResultMapper.deleteByTids(tids);
-//        }
-//
-//        dcTableMapper.deleteByPid(pid);
-//        dcReconciliateResultMapper.deleteByPid(pid);
-//        return ReturnT.SUCCESS;
-//    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ReturnT<String> deleteByPid(int pid) {
+
+        jobDataContrastMapper.deleteByPid(pid);
+        dcProjectMapper.deleteByPid(pid);
+        commonDataMapper.deleteByPid(pid);
+
+        // 查询关联的表ID
+        List<Integer> tids = dcTableMapper.selectTidsByPid(pid);
+        if (tids != null && !tids.isEmpty()) {
+            dcTableHistoryMapper.deleteByTids(tids);
+            dcSourceMapper.deleteByTids(tids);
+            dcTargetMapper.deleteByTids(tids);
+            dcResultMapper.deleteByTids(tids);
+        }
+
+        dcTableMapper.deleteByPid(pid);
+        dcReconciliateResultMapper.deleteByPid(pid);
+        return ReturnT.SUCCESS;
+    }
 
 
     private int processTables(CachedRowSet crsTable, JSONArray runResult, int tablesProcessed, RepoController rpc, boolean check, Connection connRepo,

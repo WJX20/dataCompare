@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.crunchydata.mapper.JobDataContrastMapper">
+
+    <insert id="save" parameterType="com.crunchydata.models.JobDataContrast" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO job_data_contrast (
+        task_name,
+        reader_datasource_id,
+        writer_datasource_id,
+        reader_schema,
+        writer_schema,
+        meta_type
+        <if test="pid != null">, pid</if>
+        ) VALUES (
+        #{taskName},
+        #{readerDatasourceId},
+        #{writerDatasourceId},
+        #{readerSchema},
+        #{writerSchema},
+        #{metaType}
+        <if test="pid != null">, #{pid}</if>
+        );
+    </insert>
+
+    <update id="update" parameterType="com.crunchydata.models.JobDataContrast">
+        UPDATE job_data_contrast
+        SET task_name = #{taskName},
+            reader_datasource_id = #{readerDatasourceId},
+            writerDatasourceId = #{writerDatasourceId},
+            reader_schema = #{readerSchema},
+            writerSchema = #{writerSchema}
+        WHERE id = #{id}
+    </update>
+
+    <select id="pageList" parameterType="java.util.HashMap" resultType="com.crunchydata.models.JobDataContrast">
+        SELECT a.*,b.datasource_name as readerDatasourceName,c.datasource_name as writerDatasourceName FROM job_data_contrast a left join job_jdbc_datasource b on a.reader_datasource_id = b.id left join job_jdbc_datasource c on a.writer_datasource_id = c.id
+        <trim prefix="WHERE" prefixOverrides="AND | OR" >
+            <if test="taskName != null and taskName != ''">
+                AND a.task_name like CONCAT(CONCAT('%', #{taskName}), '%')
+            </if>
+            <if test="metaType != null and metaType != ''">
+                AND meta_type = #{metaType}
+            </if>
+        </trim>
+        ORDER BY a.id DESC
+        LIMIT #{pagesize} offset #{offset}
+    </select>
+
+    <select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
+        SELECT count(1)
+        FROM job_data_contrast
+        <trim prefix="WHERE" prefixOverrides="AND | OR" >
+            <if test="taskName != null and taskName != ''">
+                AND task_name like CONCAT(CONCAT('%', #{taskName}), '%')
+            </if>
+            <if test="metaType != null and metaType != ''">
+                AND meta_type = #{metaType}
+            </if>
+        </trim>
+    </select>
+
+    <delete id="delete" parameterType="java.util.HashMap">
+        DELETE
+        FROM job_data_contrast
+        WHERE id = #{id}
+    </delete>
+
+    <select id="getInfoById" parameterType="java.util.HashMap" resultType="com.crunchydata.models.JobDataContrast">
+        SELECT * FROM job_data_contrast WHERE id = #{id}
+    </select>
+
+</mapper>

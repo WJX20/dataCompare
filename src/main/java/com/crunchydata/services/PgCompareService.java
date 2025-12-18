@@ -17,5 +17,5 @@ public interface PgCompareService {
      * @param pid
      * @return
      */
-//    ReturnT<String> deleteByPid(int pid);
+    ReturnT<String> deleteByPid(int pid);
 }

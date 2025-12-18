@@ -2,7 +2,9 @@ package com.crunchydata.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.crunchydata.mapper.DCProjectMapper;
+import com.crunchydata.mapper.JobDataContrastMapper;
 import com.crunchydata.models.DCConfigurations;
+import com.crunchydata.models.JobDataContrast;
 import com.crunchydata.result.ReturnT;
 import com.crunchydata.services.CommonDataService;
 import com.crunchydata.services.DCConfigurationsService;
@@ -32,8 +34,8 @@ public class PgCompareController {
     @Autowired
     public DCProjectMapper dcProjectMapper;
 
-//    @Autowired
-//    private JobDataContrastMapper jobDataContrastMapper;
+    @Autowired
+    private JobDataContrastMapper jobDataContrastMapper;
 
     @Autowired
     private DatabaseUtilService databaseUtilService;
@@ -97,19 +99,19 @@ public class PgCompareController {
             int pid = dcProjectMapper.getByName(requestVO.getProjectName());
             Logging.write("info", "main", "这是pid:------------------" + pid);
 
-//            // 将日志路径持久化到数据库中
+            // 将日志路径持久化到数据库中
 //            commonDataService.add(CommonData.builder().category("PGCOMPARE_LOG").content(logFilePath).pid(pid).build());
-//
-//            // 存储在原来表中数据详情(主要是需要源和schema);
-//            JobDataContrast jobDataContrast = new JobDataContrast();
-//            jobDataContrast.setMetaType("1");
-//            jobDataContrast.setPid(pid);
-//            jobDataContrast.setTaskName(requestVO.getProjectName());
-//            jobDataContrast.setReaderDatasourceId(requestVO.getSourceId());
-//            jobDataContrast.setWriterDatasourceId(requestVO.getTargetId());
-//            jobDataContrast.setReaderSchema(requestVO.getSourceSchema());
-//            jobDataContrast.setWriterSchema(requestVO.getTargetSchema());
-//            jobDataContrastMapper.save(jobDataContrast);
+
+            // 存储在原来表中数据详情(主要是需要源和schema);
+            JobDataContrast jobDataContrast = new JobDataContrast();
+            jobDataContrast.setMetaType("1");
+            jobDataContrast.setPid(pid);
+            jobDataContrast.setTaskName(requestVO.getProjectName());
+            jobDataContrast.setReaderDatasourceId(requestVO.getSourceId());
+            jobDataContrast.setWriterDatasourceId(requestVO.getTargetId());
+            jobDataContrast.setReaderSchema(requestVO.getSourceSchema());
+            jobDataContrast.setWriterSchema(requestVO.getTargetSchema());
+            jobDataContrastMapper.save(jobDataContrast);
             // 第一步：发现表和列,数据对比映射 (check = false)
             boolean check = false;
             Logging.write("info", "main", "收到校验请求，批次: " + requestVO.getBatchNumber() + ", check: false");

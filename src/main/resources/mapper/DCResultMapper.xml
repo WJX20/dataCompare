@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.crunchydata.mapper.DCResultMapper">
+
+
+
+    <resultMap id="contrastResultMap" type="com.crunchydata.models.DCResult">
+        <id column="tid" property="tid"/>
+        <result column="source_table_name" property="sourceTableName"/>
+        <result column="target_table_name" property="targetTableName"/>
+        <result column="status" property="status"/>
+        <result column="source_cnt" property="sourceCnt"/>
+        <result column="target_cnt" property="targetCnt"/>
+        <result column="equal_cnt" property="equalCnt"/>
+        <result column="not_equal_cnt" property="notEqualCnt"/>
+        <result column="missing_source_cnt" property="missingSourceCnt"/>
+        <result column="missing_target_cnt" property="missingTargetCnt"/>
+        <result column="result_message" property="resultMessage"/>
+        <result column="compare_start" property="compareStart"/>
+        <result column="compare_end" property="compareEnd"/>
+    </resultMap>
+
+    <select id="pageList" resultMap="contrastResultMap">
+        SELECT
+        s.tid,
+        s.table_name AS source_table_name,
+        t.table_name AS target_table_name,
+        dr.status,
+        dr.source_cnt,
+        dr.target_cnt,
+        dr.equal_cnt,
+        dr.not_equal_cnt,
+        dr.missing_source_cnt,
+        dr.missing_target_cnt,
+        dr.result_message,
+        dth.start_dt AS compare_start,
+        dth.end_dt AS compare_end
+        FROM
+        (SELECT * FROM dc_table_map WHERE dest_type = 'source') s
+        JOIN
+        (SELECT * FROM dc_table_map WHERE dest_type = 'target') t
+        ON s.tid = t.tid
+        JOIN dc_result dr ON s.tid = dr.tid
+        JOIN dc_table dt ON dt.tid = dr.tid
+        LEFT JOIN dc_table_history dth
+        ON dr.tid = dth.tid
+        WHERE dt.pid = #{pid}
+        <if test="tableName != null and tableName != ''">
+            AND dt.table_alias = #{tableName}
+        </if>
+        <if test="status != null and status != '' and status != 'all'">
+            AND dr.status = #{status}
+        </if>
+        ORDER BY dt.tid
+        LIMIT #{pagesize} OFFSET #{offset}
+    </select>
+
+    <select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
+        SELECT count(1)
+        FROM
+        (SELECT * FROM dc_table_map WHERE dest_type = 'source') s
+        JOIN
+        (SELECT * FROM dc_table_map WHERE dest_type = 'target') t
+        ON s.tid = t.tid
+        JOIN dc_result dr ON s.tid = dr.tid
+        JOIN dc_table dt ON dt.tid = dr.tid
+        LEFT JOIN dc_table_history dth
+        ON dr.tid = dth.tid
+        WHERE dt.pid = #{pid}
+        <if test="tableName != null and tableName != ''">
+            AND dt.table_alias = #{tableName}
+        </if>
+        <if test="status != null and status != '' and status != 'all'">
+            AND dr.status = #{status}
+        </if>
+    </select>
+</mapper>

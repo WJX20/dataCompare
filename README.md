@@ -72,7 +72,9 @@ run DataCompareApplication
 
 
 ```start frontenddataCompareUI
-cd dataCompareUI`I```Install dependencies
+cd dataCompareUI
+
+```Install dependencies
 
 pnpm install
 

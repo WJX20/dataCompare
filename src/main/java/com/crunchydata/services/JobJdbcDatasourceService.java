@@ -13,7 +13,7 @@ public interface JobJdbcDatasourceService extends IService<JobJdbcDatasource> {
      * @param jdbcDatasource
      * @return
      */
-//    ReturnT<Boolean> dataSourceTest(JobJdbcDatasource jdbcDatasource) throws IOException;
+    ReturnT<Boolean> dataSourceTest(JobJdbcDatasource jdbcDatasource) throws IOException;
 
     /**
      *更新数据源信息

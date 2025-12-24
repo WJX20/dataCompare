@@ -128,7 +128,7 @@ public class JobJdbcDatasourceController {
     @PostMapping("/test")
 //    @ApiOperation("测试数据")
     public ReturnT<Boolean> dataSourceTest (@RequestBody JobJdbcDatasource jobJdbcDatasource) throws IOException {
-//        return jobJdbcDatasourceService.dataSourceTest(jobJdbcDatasource);
-        return new ReturnT<>(ReturnT.FAIL_CODE,"暂时未实现该功能");
+        return jobJdbcDatasourceService.dataSourceTest(jobJdbcDatasource);
+//        return new ReturnT<>(ReturnT.FAIL_CODE,"暂时未实现该功能");
     }
 }

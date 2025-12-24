@@ -211,3 +211,6 @@ pnpm build
 
 **dataCompare** is licensed under the [Apache 2.0 license](LICENSE.md).
 
+<img width="1562" height="843" alt="verifyDetails" src="https://github.com/user-attachments/assets/c604b839-80dd-4ec2-9b74-dd3310090b6d" />
+
+

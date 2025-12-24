@@ -207,10 +207,19 @@ pnpm build
   
   Default: 1000
 
+# Img
+<img width="1860" height="923" alt="login" src="https://github.com/user-attachments/assets/3ce94f66-1de6-41c0-8d5c-f7b1bc168775" />
+<img width="1860" height="923" alt="login" src="https://github.com/user-attachments/assets/f777ce63-fd6b-41ae-8257-b983e9e043a6" />
+<img width="1860" height="923" alt="datasource" src="https://github.com/user-attachments/assets/6d03913c-9579-4097-86ef-e0679de51577" />
+<img width="1860" height="923" alt="datasource" src="https://github.com/user-attachments/assets/573e3ca2-0656-4c32-af1b-c9fb4a711d78" />
+<img width="1860" height="923" alt="login" src="https://github.com/user-attachments/assets/f84ddbc8-3d87-4e40-9865-df40302740f4" />
+<img width="1860" height="923" alt="login" src="https://github.com/user-attachments/assets/95f4a0ab-d8c9-4602-883b-af551e369d0e" />
+<img width="1860" height="923" alt="login" src="https://github.com/user-attachments/assets/d3a7759b-9171-4dbe-9950-5bf606486232" />
+
+
 # License
 
 **dataCompare** is licensed under the [Apache 2.0 license](LICENSE.md).
 
-<img width="1562" height="843" alt="verifyDetails" src="https://github.com/user-attachments/assets/c604b839-80dd-4ec2-9b74-dd3310090b6d" />
 
 

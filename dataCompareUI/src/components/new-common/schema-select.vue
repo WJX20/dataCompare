@@ -25,7 +25,7 @@ const loading = ref(false);
 const options = ref<Array<{ value: string; label: string }>>([]);
 
 watch(datasourceId, async newVal => {
-  if (!newVal) {
+  if (newVal === null || newVal === undefined) {
     options.value = [];
     selectedSchema.value = null;
     return;
